@@ -43,43 +43,39 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 	int led2 = D7;
 	int photoresistor = A0;
 	int power = A5;
-	
-	float t_normal = 18.0;
-	float br_normal = 360.0;
+
 	float t_high = 70.0;
 	float br_high = 1200.0;
-	
+	float t_normal = 18.0;
+	float br_normal = 360.0;
+
 	// Like y = ax + b, a and b are coefficient.
 	// t = abr + b, t = temperature, br = brightness
 	float a = (t_high - t_normal) / (br_high - br_normal);
 	float b = t_normal - a * br_normal;
-	
+
 	void setup() {
 	  pinMode(led1, OUTPUT);
 	  pinMode(led2, OUTPUT);
 	  pinMode(photoresistor,INPUT);
 	  pinMode(power,OUTPUT);
-	
+
 	  analogWrite(power,255);
 	}
-	
+
 	void loop() {
 	  int brightness = analogRead(photoresistor);
 	  float temperature = a * brightness + b;
-	
+
 	  Particle.publish("temperature", String((int)temperature), 60, PRIVATE);
-	
-	  if((int)temperature < 70){
-	    normalBlink();
-	  }else{
-	    alertingBlink();
-	  }
+
+	  normalBlink();
 	}
-	
+
 	// takes 6 seconds
 	void normalBlink(){
 	  digitalWrite(led2, LOW);
-	
+
 	  for(int i=0; i<3; i++){
 	    digitalWrite(led1, HIGH);
 	    delay(1500);
@@ -87,11 +83,11 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 	    delay(500);
 	  }
 	}
-	
+
 	// takes 6 seconds
 	void alertingBlink(){
 	  digitalWrite(led2, HIGH);
-	
+
 	  for(int i=0; i<6; i++){
 	    digitalWrite(led1, HIGH);
 	    delay(800);
@@ -107,7 +103,7 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 	1. 出力が AlertsQueue になっているものを選択します。それを「停止」します。以下のようにクエリを編集します。  
 
 		```
-		WITH AlertData AS 
+		WITH AlertData AS
 		(
 		    SELECT
 		        CASE
@@ -130,10 +126,10 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 		            CASE
 		                WHEN Stream.data IS NOT null THEN CAST( Stream.data as bigint )
 		                ELSE Stream.Temperature
-		            END 
+		            END
 	                > Ref.Temperature
 		)
-		
+
 		SELECT data.DeviceId,
 		    data.ReadingType,
 		    data.Reading,
@@ -149,7 +145,7 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 	1. 出力が PowerBISQL になっているものを選択します。それを「停止」します。以下のようにクエリを編集します。  
 
 		```
-		WITH TelemetryData AS 
+		WITH TelemetryData AS
 		(
 			SELECT
 			    CASE
@@ -173,11 +169,11 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 			SELECT
 			    TopOne() OVER (ORDER BY Reading DESC) AS telemetryEvent
 			FROM
-			    TelemetryData 
-			GROUP BY 
+			    TelemetryData
+			GROUP BY
 			    TumblingWindow(minute, 1), DeviceId
 		)
-		
+
 		SELECT telemetryEvent.DeviceId,
 		    telemetryEvent.ReadingType,
 		    telemetryEvent.Reading,
@@ -190,4 +186,3 @@ Particle社製 Photon を使って Connected Field Service for Dynamics 365 (CFS
 		```
 
 	以上です。
-
